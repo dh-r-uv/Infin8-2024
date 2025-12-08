@@ -43,10 +43,17 @@ kubectl get hpa
 ## 4. Access the App
 Get the URL of the running application.
 ```bash
-# Make sure 'minikube tunnel' is running in another tab!
-kubectl get svc infin8-app-service
-```
-Copy the `EXTERNAL-IP`. If it says `<pending>` for too long, use `minikube service infin8-app-service --url`.
+    *   **Option A (Most Reliable)**: Use Port Forwarding.
+        ```bash
+        kubectl port-forward svc/infin8-app-service 8081:80
+        ```
+        Then open **[http://localhost:8081](http://localhost:8081)**.
+        *(Keep this terminal open)*
+
+    *   **Option B**: Minikube Service URL (might ask for password on WSL).
+        ```bash
+        minikube service infin8-app-service --url
+        ```
 
 ## 5. Demonstrate Auto-Scaling (HPA)
 Now, let's stress the system to show it scaling up.

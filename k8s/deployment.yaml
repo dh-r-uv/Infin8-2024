@@ -90,6 +90,10 @@ spec:
               value: Infin8
             - name: MYSQL_PORT
               value: "3306"
+            - name: EMAIL_HOST_USER
+              value: "dummy@example.com"
+            - name: EMAIL_HOST_PASSWORD
+              value: "dummy"
 ---
 apiVersion: v1
 kind: Service
