@@ -1,0 +1,78 @@
+---
+- name: Deploy Infin8 Application
+  hosts: webserver
+  become: yes
+  vars:
+    project_dir: /opt/infin8
+    docker_image: dhruvk321/infin8:latest
+    db_password: "change_me_to_something_secure" # Ideally use ansible-vault
+
+  tasks:
+    - name: Ensure Docker is installed
+      package:
+        name: docker.io
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Ensure Docker Compose is installed
+      get_url:
+        url: https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+      # Simple check to avoid reinstalling every time if present
+      args:
+        force: no
+
+    - name: Create project directory
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create docker-compose.yml
+      copy:
+        dest: "{{ project_dir }}/docker-compose.yml"
+        content: |
+          version: '3.8'
+          services:
+            mysql:
+              image: mysql:8.0
+              environment:
+                MYSQL_ROOT_PASSWORD: {{ db_password }}
+                MYSQL_DATABASE: infin8_db
+              volumes:
+                - mysql_data:/var/lib/mysql
+              restart: always
+              healthcheck:
+                test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+                timeout: 20s
+                retries: 10
+
+            web:
+              image: {{ docker_image }}
+              ports:
+                - "8000:8000"
+              depends_on:
+                mysql:
+                  condition: service_healthy
+              environment:
+                # Adjust these to match your Django settings
+                DB_HOST: mysql
+                DB_NAME: infin8_db
+                DB_USER: root
+                DB_PASSWORD: {{ db_password }}
+              command: python manage.py runserver 0.0.0.0:8000
+              restart: always
+
+          volumes:
+            mysql_data:
+
+    - name: Pull latest image
+      command: docker-compose pull
+      args:
+        chdir: "{{ project_dir }}"
+
+    - name: Start services
+      command: docker-compose up -d
+      args:
+        chdir: "{{ project_dir }}"

@@ -152,7 +152,7 @@ def loginPage(request):
                 user = User.objects.get(email=email)
                 if user.email_verified==False:
                     messages.error(request, 'Email is not verified')
-                    return redirect('login')
+                    return redirect('login') 
             except:
                 messages.error(request, 'User does not exist')
             
@@ -190,10 +190,10 @@ def registerPage(request):
                 messages.error(request, 'Please use your personal email id, preferably gmail')
             else:
                 user.username = user.username.lower()
-                user.email_token = str(uuid.uuid4())
-                send_email_token(user.email, user.email_token)
+                user.email_verified = True
                 user.save()
-                messages.success(request, f'Email has been sent to {user.email}')
+                messages.success(request, f'Registration successful. Please login.')
+                return redirect('login')
         else:
             messages.error(request, 'An error occurred during registration (Ensure that you are not using the same email id or username /Check rules for password has mentioned in the registration form, this error could have been caused by that)')
 

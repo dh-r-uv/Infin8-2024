@@ -397,5 +397,26 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-db_data
+db_data/
 .env
+
+# Python Virtual Environment
+venv/
+.venv/
+env/
+
+# Binaries
+minikube-linux-amd64
+
+# Database
+*.sqlite3
+mysql_data/
+es_data/
+
+# IDEs
+.idea/
+.vscode/
+
+# Static and Media
+staticfiles/
+media/
