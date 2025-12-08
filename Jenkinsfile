@@ -29,8 +29,19 @@ pipeline {
             steps {
                 script {
                     echo 'Running Tests...'
-                    // Run tests inside the container image we just built
-                    sh "docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} python manage.py test"
+                    // Run tests inside the container with dummy env vars to satisfy settings.py
+                    sh """
+                    docker run --rm \
+                    -e MYSQL_DATABASE=test_db \
+                    -e MYSQL_USER=test_user \
+                    -e MYSQL_PASSWORD=test_pass \
+                    -e MYSQL_HOST=127.0.0.1 \
+                    -e MYSQL_PORT=3306 \
+                    -e EMAIL_HOST_USER=dummy@example.com \
+                    -e EMAIL_HOST_PASSWORD=dummy \
+                    ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                    python manage.py test
+                    """
                 }
             }
         }
