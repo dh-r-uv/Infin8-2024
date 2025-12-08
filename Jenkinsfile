@@ -41,49 +41,6 @@ pipeline {
                     echo 'Pushing Docker image to registry...'
                     withCredentials([usernamePassword(credentialsId: DOCKER_CREDS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-pipeline {
-    agent any
-
-    environment {
-        DOCKER_IMAGE = 'dhruvk321/infin8'
-        DOCKER_TAG = "latest"
-        // Credentials ID as provided by the user
-        DOCKER_CREDS_ID = 'docker-credentials' 
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    echo 'Building Docker image...'
-                    // Build the image using the Dockerfile in current directory
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                }
-            }
-        }
-
-        stage('Test') {
-            steps {
-                script {
-                    echo 'Running Tests...'
-                    // Run tests inside the container image we just built
-                    sh "docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} python manage.py test"
-                }
-            }
-        }
-
-        stage('Push to Registry') {
-            steps {
-                script {
-                    echo 'Pushing Docker image to registry...'
-                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
                         sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
                     }
                 }
