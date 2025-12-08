@@ -563,3 +563,12 @@ def dummy(request):
 
 def dummygame(request,game_link):
     return redirect('Game', game_link=game_link)
+
+def stress_cpu(request):
+    import time
+    start_time = time.time()
+    x = 0
+    # Loop for roughly 500ms-1s of CPU time
+    for i in range(10000000):
+        x += i * i
+    return HttpResponse(f"CPU Stressed! Result: {x}, Time: {time.time() - start_time}")
