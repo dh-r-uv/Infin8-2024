@@ -80,15 +80,21 @@ WSGI_APPLICATION = 'Infin8.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default':{
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+if not config('USE_SQLITE', default=False, cast=bool):
+    DATABASES['default'] = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': config('MYSQL_DATABASE'),
         'USER': config('MYSQL_USER'),
         'PASSWORD': config('MYSQL_PASSWORD'),
-        'HOST': config('MYSQL_HOST'),  # or the hostname where your MySQL server is running
-        'PORT': config('MYSQL_PORT'),      # or the port on which your MySQL server is listening
+        'HOST': config('MYSQL_HOST'),
+        'PORT': config('MYSQL_PORT'),
     }
-}
 
 
 # Password validation
