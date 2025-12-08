@@ -12,7 +12,7 @@ from .models import IncomingRequest, OutgoingRequest, Status
 from datetime import datetime, timedelta
 import pytz
 
-#Trigger ke liye
+
 TIME_ZONE =  'Asia/Kolkata'
 Game_time = 2   #in min 
 
