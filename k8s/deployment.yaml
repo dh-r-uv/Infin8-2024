@@ -34,7 +34,10 @@ spec:
                   name: infin8-secrets
                   key: mysql-root-password
             - name: MYSQL_DATABASE
-              value: Infin8
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: mysql-db
           ports:
             - containerPort: 3306
               name: mysql
@@ -96,11 +99,17 @@ spec:
                   name: infin8-secrets
                   key: mysql-password
             - name: MYSQL_DATABASE
-              value: Infin8
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: mysql-db
             - name: MYSQL_PORT
               value: "3306"
             - name: EMAIL_HOST_USER
-              value: "dummy@example.com"
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: email-user
             - name: EMAIL_HOST_PASSWORD
               valueFrom:
                 secretKeyRef:

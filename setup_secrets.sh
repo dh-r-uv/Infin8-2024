@@ -15,6 +15,7 @@ kubectl create secret generic infin8-secrets \
     --from-literal=mysql-password=root \
     --from-literal=mysql-user=root \
     --from-literal=mysql-db=Infin8 \
+    --from-literal=email-user=dummy@example.com \
     --from-literal=email-password=dummy
 
 echo "✅ Secrets created successfully!"
