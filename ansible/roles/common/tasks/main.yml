@@ -1,0 +1,14 @@
+---
+- name: Ensure Docker is installed
+  package:
+    name: docker.io
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Ensure Docker Compose is installed
+  get_url:
+    url: https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+  args:
+    force: no

@@ -92,3 +92,23 @@ minikube stop
 # Ctrl+C to stop minikube tunnel
 # Ctrl+C to stop load_test.sh
 ```
+
+## 8. Resetting / Wiping Data
+If you need to clear the database to start fresh (e.g., to re-create the admin user), follow this EXACT order.
+
+1.  **Stop the App First** (Releases the lock on the data):
+    ```bash
+    kubectl delete deployment mysql
+    ```
+    *Wait for the pod to disappear.*
+
+2.  **Delete the Data**:
+    ```bash
+    kubectl delete pvc mysql-pv-claim
+    ```
+
+3.  **Restart**:
+    Now when you deploy again (via Jenkins or manually), the database will be fresh.
+    ```bash
+    kubectl apply -f k8s/deployment.yaml
+    ```

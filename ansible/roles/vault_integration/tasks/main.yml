@@ -1,0 +1,19 @@
+---
+- name: Fetch DB Password from Vault
+  uri:
+    url: "{{ vault_addr }}/v1/secret/data/infin8"
+    method: GET
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    return_content: yes
+    status_code: 200
+  register: vault_response
+  ignore_errors: true
+  delegate_to: localhost
+
+- name: Set db facts from Vault
+  set_fact:
+    db_password: "{{ vault_response.json.data.data.MYSQL_PASSWORD | default('root') }}"
+    db_user: "{{ vault_response.json.data.data.MYSQL_USER | default('root') }}"
+    db_name: "{{ vault_response.json.data.data.MYSQL_DATABASE | default('infin8_db') }}"
+    db_host: "{{ vault_response.json.data.data.MYSQL_HOST | default('mysql') }}"

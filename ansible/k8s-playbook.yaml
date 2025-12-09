@@ -3,22 +3,5 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  tasks:
-    - name: Apply MySQL and App Deployment
-      ansible.builtin.shell: kubectl apply -f k8s/deployment.yaml
-      args:
-        chdir: "{{ playbook_dir }}/.."
-
-    - name: Apply Horizontal Pod Autoscaler
-      ansible.builtin.shell: kubectl apply -f k8s/hpa.yaml
-      args:
-        chdir: "{{ playbook_dir }}/.."
-
-    - name: Wait for Deployment Rollout
-      ansible.builtin.shell: kubectl rollout status deployment/infin8-app
-      register: rollout_status
-      changed_when: false
-    
-    - name: Show Rollout Status
-      debug:
-        msg: "{{ rollout_status.stdout }}"
+  roles:
+    - k8s_deploy

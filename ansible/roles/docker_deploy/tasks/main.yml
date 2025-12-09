@@ -1,0 +1,56 @@
+---
+- name: Create project directory
+  file:
+    path: "{{ project_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Create docker-compose.yml
+  copy:
+    dest: "{{ project_dir }}/docker-compose.yml"
+    content: |
+      version: '3.8'
+      services:
+        mysql:
+          image: mysql:8.0
+          environment:
+            MYSQL_ROOT_PASSWORD: {{ db_password }}
+            MYSQL_DATABASE: {{ db_name }}
+            MYSQL_USER: {{ db_user }}
+            MYSQL_PASSWORD: {{ db_password }}
+          volumes:
+            - mysql_data:/var/lib/mysql
+          restart: always
+          healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+            timeout: 20s
+            retries: 10
+
+        web:
+          image: {{ docker_image }}
+          ports:
+            - "8000:8000"
+          depends_on:
+            mysql:
+              condition: service_healthy
+          environment:
+            # Adjust these to match your Django settings
+            DB_HOST: {{ db_host }}
+            DB_NAME: {{ db_name }}
+            DB_USER: {{ db_user }}
+            DB_PASSWORD: {{ db_password }}
+          command: python manage.py runserver 0.0.0.0:8000
+          restart: always
+
+      volumes:
+        mysql_data:
+
+- name: Pull latest image
+  command: docker-compose pull
+  args:
+    chdir: "{{ project_dir }}"
+
+- name: Start services
+  command: docker-compose up -d
+  args:
+    chdir: "{{ project_dir }}"
