@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404,redirect
-import os
+import os # Force Rebuild 2
 from django.contrib.auth import authenticate, login, logout
 from .forms import MyUserCreationForm
 from django.contrib import messages
@@ -146,30 +146,25 @@ def loginPage(request):
         return redirect('participant_home') 
 
     if request.method == 'POST':
-           
-        email = request.POST.get('email').lower()
-        if len(email)<=60:
-            password = request.POST.get('password')
-            try:
-                user = User.objects.get(email=email)
-                if user.email_verified==False:
-                    messages.error(request, 'Email is not verified')
-                    return redirect('login') 
-            except:
-                messages.error(request, 'User does not exist')
-            
-            
-    
-            user = authenticate(request, email=email, password=password , email_verified=True)
-            
-            if user is not None:
-                login(request, user)
-                return redirect('participant_home') 
-            else:
-                messages.error(request, 'Email or password does not exit') 
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        try:
+            user = User.objects.get(email=email)
+        except:
+             messages.error(request, 'User does not exist')
+             context = {'page':page, 'is_canary': os.environ.get('CANARY_DEPLOYMENT') == 'true'}
+             return render(request, 'login_register.html', context)
+        
+        user = authenticate(request, email=email, password=password)
+
+        if user is not None:
+             login(request, user)
+             return redirect('participant_home')
         else:
-            messages.error(request, 'Email is too long, dont you get sneaky')
-    context = {'page': page}
+             messages.error(request, 'Username or Password does not exist')
+
+    context = {'page':page, 'is_canary': os.environ.get('CANARY_DEPLOYMENT') == 'true'}
     return render(request, 'login_register.html', context)
 
 
