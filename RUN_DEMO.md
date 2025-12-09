@@ -88,7 +88,56 @@ Now, let's stress the system to show it scaling up.
     *   `REPLICAS` will increase from **1 -> 5** automatically.
     *   This proves the "Self-Healing & Scaling" requirement!
 
-## 7. Stop Everything
+## 7. Demonstrate Live Patching (Zero Downtime)
+We will update the app while it's running. Users should see **ZERO errors**.
+
+1.  **Ensure Stable Connection** (Crucial!):
+    *   Make sure `minikube tunnel` is running in a separate terminal.
+    *   Get the LoadBalancer IP: `kubectl get svc infin8-app-service`
+    *   *(Do not use port-forward for this test, it disconnects during updates)*
+
+2.  **Start the Monitor**:
+    In a new terminal, run the verification script against that IP:
+    ```bash
+    chmod +x verify_patching.sh
+    ./verify_patching.sh http://<EXTERNAL-IP>:80
+    ```
+    *You should see "SUCCESS (200 OK)" scrolling.*
+
+3.  **Trigger an Update**:
+    Make a small change to a file (e.g., `views.py`), commit, and push.
+    ```bash
+    git commit -am "Patch update"
+    git push
+    ```
+
+4.  **Watch Magic Happen**:
+    *   Jenkins will build and deploy.
+    *   Kubernetes will start a **new pod**.
+    *   It waits for the `readinessProbe` to pass.
+    *   Only then does it kill the old pod.
+    *   **Result**: Your "Monitor" script never stops printing "SUCCESS". Zero downtime!
+
+## 8. Demonstrate Canary Deployment (AIOps)
+To earn the Domain-Specific marks, show that you have a "Canary" release track.
+
+1.  **Check Deployments**:
+    The pipeline now deploys **two** versions of the app side-by-side.
+    ```bash
+    kubectl get deployments
+    ```
+    *   `infin8-app` (Stable Track)
+    *   `infin8-canary` (Canary Track)
+
+2.  **Verify Traffic Splitting**:
+    Both tracks share the same LoadBalancer.
+    ```bash
+    kubectl describe service infin8-app-service
+    ```
+    *   Look at `Endpoints`: You will see IPs for BOTH stable and canary pods.
+    *   K8s automatically balances traffic between them (roughly 50/50 in this demo config).
+
+## 9. Stop Everything
 ```bash
 minikube stop
 # Ctrl+C to stop minikube tunnel

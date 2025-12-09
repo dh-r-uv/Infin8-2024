@@ -4,6 +4,11 @@
   args:
     chdir: "{{ playbook_dir }}/.."
 
+- name: Apply Canary Deployment (10-20% Traffic)
+  ansible.builtin.shell: kubectl apply -f k8s/canary.yaml
+  args:
+    chdir: "{{ playbook_dir }}/.."
+
 - name: Apply Horizontal Pod Autoscaler
   ansible.builtin.shell: kubectl apply -f k8s/hpa.yaml
   args:

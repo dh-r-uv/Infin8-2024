@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infin8-canary
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: infin8-app
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: infin8-app
+        track: canary
+    spec:
+      containers:
+        - image: dhruvk321/infin8:latest
+          name: infin8-app
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          ports:
+            - containerPort: 8000
+          command: ["/bin/sh", "-c", "python manage.py ensure_admin && python manage.py runserver 0.0.0.0:8000"]
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          env:
+            - name: DJANGO_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: admin-user
+            - name: DJANGO_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: admin-password
+            - name: DJANGO_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: admin-email
+            - name: MYSQL_HOST
+              value: mysql
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: mysql-user
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: mysql-password
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: mysql-db
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: EMAIL_HOST_USER
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: email-user
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: email-password
