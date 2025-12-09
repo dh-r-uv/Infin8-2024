@@ -420,3 +420,6 @@ es_data/
 # Static and Media
 staticfiles/
 media/
+
+# Secrets Script
+setup_secrets.sh

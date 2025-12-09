@@ -23,6 +23,7 @@ Since we don't commit secrets to Git, you must seed them manually once.
 chmod +x setup_secrets.sh
 ./setup_secrets.sh
 ```
+> **⚠️ SECURITY WARNING:** `setup_secrets.sh` contains real passwords. It is added to `.gitignore` automatically. **Do not force add it to Git.** This file lives only on your local machine.
 
 ## 3. Trigger the Building & Deployment (Jenkins)
 Now we trigger the CI/CD pipeline.
