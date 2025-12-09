@@ -1,6 +1,7 @@
 # 🚀 Run the Whole Project: Start to Finish
 
 
+
 Follow these steps to demonstrate the complete DevOps workflow (Jenkins -> Ansible -> Kubernetes -> HPA).
 
 ## 1. Start Infrastructure (Minikube)
