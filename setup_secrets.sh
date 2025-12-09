@@ -16,7 +16,10 @@ kubectl create secret generic infin8-secrets \
     --from-literal=mysql-user=root \
     --from-literal=mysql-db=Infin8 \
     --from-literal=email-user=dummy@example.com \
-    --from-literal=email-password=dummy
+    --from-literal=email-password=dummy \
+    --from-literal=admin-user=admin \
+    --from-literal=admin-password=admin123 \
+    --from-literal=admin-email=admin@gmail.com
 
 echo "✅ Secrets created successfully!"
 echo "Now you can run the Jenkins pipeline."

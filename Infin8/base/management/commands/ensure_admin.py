@@ -9,14 +9,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         User = get_user_model()
         
-        # Default credentials
-        username = 'admin'
-        password = 'admin123'
-        email = 'admin@example.com'
+        # Priority 1: Environment Variables (K8s Secrets)
+        # Priority 2: Vault (if configured)
+        # Priority 3: Hardcoded Defaults
+        username = os.getenv('DJANGO_ADMIN_USER', 'admin')
+        password = os.getenv('DJANGO_ADMIN_PASSWORD', 'admin123')
+        email = os.getenv('DJANGO_ADMIN_EMAIL', 'admin@example.com')
 
-        # Vault Integration
+        # Vault Integration (Optional Override)
         import hvac
-        import os
         
         VAULT_ADDR = os.getenv('VAULT_ADDR')
         VAULT_TOKEN = os.getenv('VAULT_DEV_ROOT_TOKEN_ID', 'root')

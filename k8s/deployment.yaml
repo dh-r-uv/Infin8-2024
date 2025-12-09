@@ -85,7 +85,23 @@ spec:
               memory: "512Mi"
           ports:
             - containerPort: 8000
+          command: ["/bin/sh", "-c", "python manage.py ensure_admin && python manage.py runserver 0.0.0.0:8000"]
           env:
+            - name: DJANGO_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: admin-user
+            - name: DJANGO_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: admin-password
+            - name: DJANGO_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: admin-email
             - name: MYSQL_HOST
               value: mysql
             - name: MYSQL_USER
