@@ -247,14 +247,14 @@ def participant_home(request):
                     else:
                         messages.error(request,'Attendance code is not valid')
 
-        users=User.objects.filter(admin=False).order_by('-points').values()
+        users=User.objects.filter(is_superuser=False).order_by('-points').values()
         context = {
             'users': users,
             'flag':flag,
         }
         return render(request, 'participant_home.html', context)
     else:
-        users=User.objects.filter(admin=False).order_by('-points').values()
+        users=User.objects.filter(is_superuser=False).order_by('-points').values()
         context = {
             'users': users,
             'flag':flag,
