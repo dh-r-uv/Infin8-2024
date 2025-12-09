@@ -15,7 +15,15 @@ minikube addons enable metrics-server
 minikube tunnel
 ```
 
-## 2. Trigger the Building & Deployment (Jenkins)
+## 2. Seed Secrets (Manual Security Step)
+Since we don't commit secrets to Git, you must seed them manually once.
+```bash
+# Run the seeding script (Git Bash / WSL)
+chmod +x setup_secrets.sh
+./setup_secrets.sh
+```
+
+## 3. Trigger the Building & Deployment (Jenkins)
 Now we trigger the CI/CD pipeline.
 
 1.  **Make a change**: Edit a file or just an empty commit.
@@ -29,7 +37,7 @@ Now we trigger the CI/CD pipeline.
     *   **Test**: Runs `python manage.py test`.
     *   **Deploy**: Runs Ansible to apply `k8s/deployment.yaml`.
 
-## 3. Verify Deployment
+## 4. Verify Deployment
 Once Jenkins finishes, check your cluster.
 
 ```bash
@@ -40,7 +48,7 @@ kubectl get pods
 kubectl get hpa
 ```
 
-## 4. Access the App
+## 5. Access the App
 Get the URL of the running application.
 
 ### Option A: Port Forwarding (Recommended)
@@ -57,7 +65,7 @@ If port forwarding fails, try asking Minikube for the URL directly.
 minikube service infin8-app-service --url
 ```
 
-## 5. Demonstrate Auto-Scaling (HPA)
+## 6. Demonstrate Auto-Scaling (HPA)
 Now, let's stress the system to show it scaling up.
 
 1.  **Run the Load Script**:
@@ -77,7 +85,7 @@ Now, let's stress the system to show it scaling up.
     *   `REPLICAS` will increase from **1 -> 5** automatically.
     *   This proves the "Self-Healing & Scaling" requirement!
 
-## 6. Stop Everything
+## 7. Stop Everything
 ```bash
 minikube stop
 # Ctrl+C to stop minikube tunnel

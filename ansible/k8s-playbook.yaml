@@ -5,9 +5,7 @@
   gather_facts: false
   tasks:
     - name: Apply MySQL and App Deployment
-      ansible.builtin.shell: |
-        kubectl apply -f k8s/secrets.yaml
-        kubectl apply -f k8s/deployment.yaml
+      ansible.builtin.shell: kubectl apply -f k8s/deployment.yaml
       args:
         chdir: "{{ playbook_dir }}/.."
 
