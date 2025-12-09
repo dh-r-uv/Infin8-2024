@@ -152,17 +152,17 @@ def loginPage(request):
         try:
             user = User.objects.get(email=email)
         except:
-             messages.error(request, 'User does not exist')
-             context = {'page':page, 'is_canary': os.environ.get('CANARY_DEPLOYMENT') == 'true'}
-             return render(request, 'login_register.html', context)
+            messages.error(request, 'User does not exist')
+            context = {'page':page, 'is_canary': os.environ.get('CANARY_DEPLOYMENT') == 'true'}
+            return render(request, 'login_register.html', context)
         
         user = authenticate(request, email=email, password=password)
 
         if user is not None:
-             login(request, user)
-             return redirect('participant_home')
+            login(request, user)
+            return redirect('participant_home')
         else:
-             messages.error(request, 'Username or Password does not exist')
+            messages.error(request, 'Username or Password does not exist')
 
     context = {'page':page, 'is_canary': os.environ.get('CANARY_DEPLOYMENT') == 'true'}
     return render(request, 'login_register.html', context)
