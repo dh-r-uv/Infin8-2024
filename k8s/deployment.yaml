@@ -77,6 +77,7 @@ spec:
     metadata:
       labels:
         app: infin8-app
+        track: stable
     spec:
       containers:
         - image: dhruvk321/infin8:latest # Replace with your actual image
@@ -152,11 +153,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: infin8-app-service
+  name: infin8-stable
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: infin8-app
+    track: stable
   ports:
     - port: 80
       targetPort: 8000

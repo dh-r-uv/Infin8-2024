@@ -91,3 +91,16 @@ spec:
                 secretKeyRef:
                   name: infin8-secrets
                   key: email-password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infin8-canary
+spec:
+  type: ClusterIP
+  selector:
+    app: infin8-app
+    track: canary
+  ports:
+    - port: 80
+      targetPort: 8000

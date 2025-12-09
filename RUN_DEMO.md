@@ -119,31 +119,28 @@ We will update the app while it's running. Users should see **ZERO errors**.
     *   **Result**: Your "Monitor" script never stops printing "SUCCESS". Zero downtime!
 
 ## 8. Demonstrate Canary Deployment (AIOps)
-To earn the Domain-Specific marks, show that you have a "Canary" release track.
 
-1.  **Check Deployments**:
-    The pipeline now deploys **two** versions of the app side-by-side.
+**Concept**: Only **20%** of traffic goes to the new "Canary" version (Yellow Banner), managed by **NGINX Ingress**.
+
+1.  **Check Deployments & Ingress**:
     ```bash
     kubectl get deployments
+    kubectl get ingress
     ```
-    *   `infin8-app` (Stable Track)
-    *   `infin8-canary` (Canary Track)
+    (You should see `infin8-stable`, `infin8-canary`, `infin8-ingress`, and `infin8-canary-ingress`).
 
-2.  **Verify Traffic Splitting (Visual Check)**:
-    Since both versions share the same LoadBalancer, runs will randomly hit either one.
-    
-    *   **Open the Browser**: Refresh the page multiple times.
-    *   **Canary Detection**: If you hit the Canary, you will see a bright **YELLOW BANNER** "⚠️ CANARY VERSION (v1.1) ⚠️".
-    *   **Stable Detection**: Ordinary page with no banner.
+2.  **Open in Browser**:
+    *   Find the Ingress IP: `minikube ip` or `kubectl get ingress`.
+    *   Go to `http://<INGRESS_IP>/participant_home`.
+    *   Refresh rapidly. Most times it is **Blue (Stable)**. Occasionally (1 in 5) it is **Yellow (Canary)**.
 
-3.  **Automated Verification**:
-    Run the traffic analyzer script:
+3.  **Automated Proof**:
+    Run the verification script against the Ingress IP:
     ```bash
-    chmod +x verify_canary.sh
-    ./verify_canary.sh http://<EXTERNAL-IP>:80
+    ./verify_canary.sh http://<INGRESS_IP>
     ```
-    *   It will print valid statistics: `Stable=8, Canary=2 (20%)`.
-    *   This statistically proves the AIOps traffic splitting!
+    *   You will see specific statistics (approx 20% Canary).
+    *   *Note: If using WSL, ensure `minikube tunnel` is running.*
 
 ## 9. Stop Everything
 ```bash
