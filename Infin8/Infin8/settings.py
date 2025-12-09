@@ -90,31 +90,32 @@ DATABASES = {
 import hvac
 import os
 
-VAULT_ADDR = os.getenv('VAULT_ADDR')
-VAULT_TOKEN = os.getenv('VAULT_DEV_ROOT_TOKEN_ID', 'root')
-
-db_name = config('MYSQL_DATABASE')
-db_user = config('MYSQL_USER')
-db_password = config('MYSQL_PASSWORD')
-db_host = config('MYSQL_HOST')
-db_port = config('MYSQL_PORT')
-
-if VAULT_ADDR:
-    try:
-        client = hvac.Client(url=VAULT_ADDR, token=VAULT_TOKEN)
-        if client.is_authenticated():
-            print("Connected to Vault! Fetching secrets...")
-            # Attempt to read secret
-            secret_response = client.secrets.kv.v2.read_secret_version(path='infin8')
-            vault_data = secret_response['data']['data']
-            
-            db_user = vault_data.get('MYSQL_USER', db_user)
-            db_password = vault_data.get('MYSQL_PASSWORD', db_password)
-            print("Database credentials loaded from Vault.")
-    except Exception as e:
-        print(f"Vault connection failed: {e}. Falling back to .env")
-
 if not config('USE_SQLITE', default=False, cast=bool):
+    VAULT_ADDR = os.getenv('VAULT_ADDR')
+    VAULT_TOKEN = os.getenv('VAULT_DEV_ROOT_TOKEN_ID', 'root')
+
+    # Default to .env values
+    db_name = config('MYSQL_DATABASE', default='Infin8')
+    db_user = config('MYSQL_USER', default='root')
+    db_password = config('MYSQL_PASSWORD', default='root')
+    db_host = config('MYSQL_HOST', default='mysql')
+    db_port = config('MYSQL_PORT', default='3306')
+
+    if VAULT_ADDR:
+        try:
+            client = hvac.Client(url=VAULT_ADDR, token=VAULT_TOKEN)
+            if client.is_authenticated():
+                print("Connected to Vault! Fetching secrets...")
+                # Attempt to read secret
+                secret_response = client.secrets.kv.v2.read_secret_version(path='infin8')
+                vault_data = secret_response['data']['data']
+                
+                db_user = vault_data.get('MYSQL_USER', db_user)
+                db_password = vault_data.get('MYSQL_PASSWORD', db_password)
+                print("Database credentials loaded from Vault.")
+        except Exception as e:
+            print(f"Vault connection failed: {e}. Falling back to .env")
+
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': db_name,

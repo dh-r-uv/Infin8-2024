@@ -1,5 +1,6 @@
 # Infin8-2024
 
+
 ## About
 Welcome to our collaborative project between the Student Activities Council (SAC) and the 8Bit (Magazine Club of IIITB)!<p>
 Our innovative website serves as a tool to streamline attendance tracking for student events while fostering a sense of engagement and excitement within the IIITB community. Through the website we hope to enhance overall experience for both organizers and attendees.
