@@ -8,10 +8,35 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         User = get_user_model()
+        
+        # Default credentials
         username = 'admin'
         password = 'admin123'
         email = 'admin@example.com'
+
+        # Vault Integration
+        import hvac
+        import os
         
+        VAULT_ADDR = os.getenv('VAULT_ADDR')
+        VAULT_TOKEN = os.getenv('VAULT_DEV_ROOT_TOKEN_ID', 'root')
+
+        if VAULT_ADDR:
+            try:
+                client = hvac.Client(url=VAULT_ADDR, token=VAULT_TOKEN)
+                if client.is_authenticated():
+                    print("ensure_admin: Connected to Vault! Fetching admin credentials...")
+                    # Attempt to read secret
+                    secret_response = client.secrets.kv.v2.read_secret_version(path='infin8')
+                    vault_data = secret_response['data']['data']
+                    
+                    username = vault_data.get('ADMIN_USER', username)
+                    password = vault_data.get('ADMIN_PASSWORD', password)
+                    email = vault_data.get('ADMIN_EMAIL', email)
+                    print("ensure_admin: Admin credentials loaded from Vault.")
+            except Exception as e:
+                print(f"ensure_admin: Vault connection failed: {e}. Using defaults.")
+
         if not User.objects.filter(username=username).exists():
             print(f"Creating superuser '{username}'...")
             # For custom user models or standard ones

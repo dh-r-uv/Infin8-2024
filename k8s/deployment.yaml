@@ -29,7 +29,10 @@ spec:
           name: mysql
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: root
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: mysql-root-password
             - name: MYSQL_DATABASE
               value: Infin8
           ports:
@@ -83,9 +86,15 @@ spec:
             - name: MYSQL_HOST
               value: mysql
             - name: MYSQL_USER
-              value: root
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: mysql-user
             - name: MYSQL_PASSWORD
-              value: root
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: mysql-password
             - name: MYSQL_DATABASE
               value: Infin8
             - name: MYSQL_PORT
@@ -93,7 +102,10 @@ spec:
             - name: EMAIL_HOST_USER
               value: "dummy@example.com"
             - name: EMAIL_HOST_PASSWORD
-              value: "dummy"
+              valueFrom:
+                secretKeyRef:
+                  name: infin8-secrets
+                  key: email-password
 ---
 apiVersion: v1
 kind: Service
