@@ -15,6 +15,7 @@ import pytz
 
 TIME_ZONE =  'Asia/Kolkata'
 Game_time = 2   #in min 
+CONTEST_END_DATE = datetime(2030, 1, 1, tzinfo=pytz.timezone(TIME_ZONE)) 
 
 
 
@@ -246,14 +247,14 @@ def participant_home(request):
                     else:
                         messages.error(request,'Attendance code is not valid')
 
-        users=User.objects.all().order_by('-points').values()
+        users=User.objects.filter(admin=False).order_by('-points').values()
         context = {
             'users': users,
             'flag':flag,
         }
         return render(request, 'participant_home.html', context)
     else:
-        users=User.objects.all().order_by('-points').values()
+        users=User.objects.filter(admin=False).order_by('-points').values()
         context = {
             'users': users,
             'flag':flag,
@@ -289,7 +290,7 @@ def playGame(request):
         flag = 0
         if request.method == 'POST'  and request.POST['action']=='Make request':
             time_now = datetime.now(pytz.timezone(TIME_ZONE))
-            if time_now >= datetime(2024, 2, 19, tzinfo=pytz.timezone(TIME_ZONE)):
+            if time_now >= CONTEST_END_DATE:
                 messages.error(request, 'Contest is over, you cannot send any requests now')
                 return redirect('playGame')
             num1 = request.POST.get('num1')
@@ -349,7 +350,7 @@ def playGame(request):
 
 def confirmGame(request, game_link):  #receiver plays the game
     time_now = datetime.now(pytz.timezone(TIME_ZONE))
-    if time_now >= datetime(2024, 2, 19, tzinfo=pytz.timezone(TIME_ZONE)):
+    if time_now >= CONTEST_END_DATE:
         messages.error(request, 'Contest is over, you cannot play the game now')
         return redirect('playGame')
     
