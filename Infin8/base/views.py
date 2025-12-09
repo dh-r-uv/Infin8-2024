@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404,redirect
+import os
 from django.contrib.auth import authenticate, login, logout
 from .forms import MyUserCreationForm
 from django.contrib import messages
@@ -251,6 +252,7 @@ def participant_home(request):
         context = {
             'users': users,
             'flag':flag,
+            'is_canary': os.environ.get('CANARY_DEPLOYMENT') == 'true',
         }
         return render(request, 'participant_home.html', context)
     else:

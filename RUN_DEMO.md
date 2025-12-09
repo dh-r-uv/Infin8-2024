@@ -129,13 +129,21 @@ To earn the Domain-Specific marks, show that you have a "Canary" release track.
     *   `infin8-app` (Stable Track)
     *   `infin8-canary` (Canary Track)
 
-2.  **Verify Traffic Splitting**:
-    Both tracks share the same LoadBalancer.
+2.  **Verify Traffic Splitting (Visual Check)**:
+    Since both versions share the same LoadBalancer, runs will randomly hit either one.
+    
+    *   **Open the Browser**: Refresh the page multiple times.
+    *   **Canary Detection**: If you hit the Canary, you will see a bright **YELLOW BANNER** "⚠️ CANARY VERSION (v1.1) ⚠️".
+    *   **Stable Detection**: Ordinary page with no banner.
+
+3.  **Automated Verification**:
+    Run the traffic analyzer script:
     ```bash
-    kubectl describe service infin8-app-service
+    chmod +x verify_canary.sh
+    ./verify_canary.sh http://<EXTERNAL-IP>:80
     ```
-    *   Look at `Endpoints`: You will see IPs for BOTH stable and canary pods.
-    *   K8s automatically balances traffic between them (roughly 50/50 in this demo config).
+    *   It will print valid statistics: `Stable=8, Canary=2 (20%)`.
+    *   This statistically proves the AIOps traffic splitting!
 
 ## 9. Stop Everything
 ```bash

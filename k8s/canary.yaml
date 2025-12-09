@@ -45,6 +45,8 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 10
           env:
+            - name: CANARY_DEPLOYMENT
+              value: "true"
             - name: DJANGO_ADMIN_USER
               valueFrom:
                 secretKeyRef:

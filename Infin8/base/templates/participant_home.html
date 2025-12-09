@@ -175,6 +175,11 @@
     <img src="{% static 'img/Logo_with_Theme_vect.svg' %}" alt="Logo" style="height:70px;width: 140px;">
     <h1 class="lg">Loyalty Program</h1>
 </div>
+{% if is_canary %}
+<div style="background: #FDC500; color: #881E82; text-align: center; font-weight: bold; padding: 10px; font-size: 20px; border: 2px solid #881E82;">
+    ⚠️ CANARY VERSION (v1.1) ⚠️
+</div>
+{% endif %}
 
 <div class="screen">
     {% block content %}
