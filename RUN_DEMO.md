@@ -42,18 +42,20 @@ kubectl get hpa
 
 ## 4. Access the App
 Get the URL of the running application.
-```bash
-    *   **Option A (Most Reliable)**: Use Port Forwarding.
-        ```bash
-        kubectl port-forward svc/infin8-app-service 8081:80
-        ```
-        Then open **[http://localhost:8081](http://localhost:8081)**.
-        *(Keep this terminal open)*
 
-    *   **Option B**: Minikube Service URL (might ask for password on WSL).
-        ```bash
-        minikube service infin8-app-service --url
-        ```
+### Option A: Port Forwarding (Recommended)
+This is the most reliable method on WSL.
+```bash
+kubectl port-forward svc/infin8-app-service 8081:80
+```
+Then open **[http://localhost:8081](http://localhost:8081)**.
+*(Keep this terminal open)*
+
+### Option B: Minikube Service URL
+If port forwarding fails, try asking Minikube for the URL directly.
+```bash
+minikube service infin8-app-service --url
+```
 
 ## 5. Demonstrate Auto-Scaling (HPA)
 Now, let's stress the system to show it scaling up.
@@ -71,7 +73,7 @@ Now, let's stress the system to show it scaling up.
     kubectl get hpa -w
     ```
 3.  **Result**:
-    *   As traffic hits, `TARGET` CPU % will go above 50%.
+    *   As traffic hits, `TARGET` CPU % will go above 20%.
     *   `REPLICAS` will increase from **1 -> 5** automatically.
     *   This proves the "Self-Healing & Scaling" requirement!
 

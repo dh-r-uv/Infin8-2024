@@ -13,5 +13,5 @@ echo "Starting load test on $URL..."
 echo "Press CTRL+C to stop."
 
 while true; do
-  curl -s -o /dev/null "$URL"
+  curl -s -o /dev/null "$URL/stress"
 done

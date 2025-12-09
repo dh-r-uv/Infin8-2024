@@ -86,14 +86,42 @@ DATABASES = {
     }
 }
 
+# Vault Integration
+import hvac
+import os
+
+VAULT_ADDR = os.getenv('VAULT_ADDR')
+VAULT_TOKEN = os.getenv('VAULT_DEV_ROOT_TOKEN_ID', 'root')
+
+db_name = config('MYSQL_DATABASE')
+db_user = config('MYSQL_USER')
+db_password = config('MYSQL_PASSWORD')
+db_host = config('MYSQL_HOST')
+db_port = config('MYSQL_PORT')
+
+if VAULT_ADDR:
+    try:
+        client = hvac.Client(url=VAULT_ADDR, token=VAULT_TOKEN)
+        if client.is_authenticated():
+            print("Connected to Vault! Fetching secrets...")
+            # Attempt to read secret
+            secret_response = client.secrets.kv.v2.read_secret_version(path='infin8')
+            vault_data = secret_response['data']['data']
+            
+            db_user = vault_data.get('MYSQL_USER', db_user)
+            db_password = vault_data.get('MYSQL_PASSWORD', db_password)
+            print("Database credentials loaded from Vault.")
+    except Exception as e:
+        print(f"Vault connection failed: {e}. Falling back to .env")
+
 if not config('USE_SQLITE', default=False, cast=bool):
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('MYSQL_DATABASE'),
-        'USER': config('MYSQL_USER'),
-        'PASSWORD': config('MYSQL_PASSWORD'),
-        'HOST': config('MYSQL_HOST'),
-        'PORT': config('MYSQL_PORT'),
+        'NAME': db_name,
+        'USER': db_user,
+        'PASSWORD': db_password,
+        'HOST': db_host,
+        'PORT': db_port,
     }
 
 

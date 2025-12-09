@@ -64,19 +64,30 @@ python manage.py wait_for_db
 python manage.py runserver
 ```
 
-## 7. Create Admin User
-To access the Django Admin panel, you need to create a superuser.
-
+## 7. Automated Admin User
+The project now includes a command to automatically create an admin user if one doesn't exist.
+Run this command once:
 ```bash
-cd Infin8
-python manage.py createsuperuser
+python manage.py ensure_admin
 ```
-*   **Email**: `admin@example.com` (Used as login)
 *   **Username**: `admin`
-*   **Phone Number**: `1234567890` (Required by custom user model)
-*   **Password**: *Enter a secure password*
+*   **Password**: `admin123`
+*   **Email**: `admin@example.com`
 
-## 8. Access the App
+## 8. Secure Storage (Vault)
+The project is configured to use HashiCorp Vault for database credentials.
+1.  **Vault Service**: Included in `docker-compose` (Port 8200).
+2.  **Integration**: `settings.py` automatically checks Vault for secrets if `VAULT_ADDR` is set.
+3.  **To Seed Secrets (Optional)**:
+    You can manually add secrets to Vault to test this secure flow:
+    ```bash
+    # (Inside container or if you have vault CLI)
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='root'
+    vault kv put secret/infin8 MYSQL_USER=root MYSQL_PASSWORD=root
+    ```
+
+## 9. Access the App
 *   **Website**: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 *   **Admin Panel**: [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
 
