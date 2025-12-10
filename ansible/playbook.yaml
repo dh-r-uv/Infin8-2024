@@ -4,7 +4,8 @@
   become: yes
   vars:
     project_dir: /opt/infin8
-    docker_image: dhruvk321/infin8:latest
+    docker_registry_user: "{{ lookup('env', 'DOCKER_REGISTRY_USER') | default('dhruvk321', true) }}"
+    docker_image: "{{ docker_registry_user }}/infin8:latest"
     vault_addr: "http://localhost:8200"
     vault_token: "root"
 

@@ -11,9 +11,12 @@
 
 set -e
 
+# Get Docker registry user from environment or use default
+DOCKER_REGISTRY_USER="${DOCKER_REGISTRY_USER:-dhruvk321}"
+
 # Configuration
-CANARY_IMAGE="${1:-dhruvk321/infin8:v1.1}"
-STABLE_IMAGE="${2:-dhruvk321/infin8:latest}"
+CANARY_IMAGE="${1:-$DOCKER_REGISTRY_USER/infin8:v1.1}"
+STABLE_IMAGE="${2:-$DOCKER_REGISTRY_USER/infin8:latest}"
 MONITOR_DURATION=60  # Monitor for 60 seconds
 CHECK_INTERVAL=5     # Check every 5 seconds
 ERROR_THRESHOLD=10   # Max 10% error rate

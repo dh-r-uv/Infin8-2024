@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'dhruvk321/infin8'
+        // Get Docker registry user from Jenkins environment variable (fallback to dhruvk321)
+        DOCKER_REGISTRY_USER = "${env.DOCKER_REGISTRY_USER ?: 'dhruvk321'}"
+        DOCKER_IMAGE = "${DOCKER_REGISTRY_USER}/infin8"
         DOCKER_TAG = "latest"
         // Credentials ID as provided by the user
         DOCKER_CREDS_ID = 'docker-credentials' 

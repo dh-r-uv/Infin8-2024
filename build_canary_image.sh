@@ -6,8 +6,11 @@
 # Quickly build a new version for testing with auto_canary.sh
 #############################################################################
 
+# Get Docker registry user from environment or use default
+DOCKER_REGISTRY_USER="${DOCKER_REGISTRY_USER:-dhruvk321}"
+
 VERSION="${1:-v1.1}"
-IMAGE_NAME="dhruvk321/infin8:$VERSION"
+IMAGE_NAME="$DOCKER_REGISTRY_USER/infin8:$VERSION"
 
 echo "========================================="
 echo "Building Canary Image: $IMAGE_NAME"
