@@ -81,6 +81,7 @@ spec:
     spec:
       containers:
         - image: dhruvk321/infin8:latest # Replace with your actual image
+          imagePullPolicy: Always  # Always pull latest image
           name: infin8-app
           resources:
             requests:

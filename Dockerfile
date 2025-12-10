@@ -16,9 +16,6 @@ COPY ./Infin8 /app
 # Install any needed packages specified in requirements.txt
 RUN pip install -r ./requirements.txt
 
-# Install ELK logging support
-RUN pip install python-logstash-async
-
 # Make port 8000 available to the world outside this container
 EXPOSE 8080
 
