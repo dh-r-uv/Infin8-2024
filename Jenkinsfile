@@ -58,7 +58,6 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying to Minikube via Ansible...'
-                    // Assumes Jenkins can run ansible directly or via a shell
                     sh "ansible-playbook ansible/k8s-playbook.yaml"
                 }
             }
