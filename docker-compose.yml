@@ -16,40 +16,49 @@ services:
       retries: 10
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
     container_name: elasticsearch
     environment:
-      - node.name=elasticsearch
       - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # Limit memory usage so it doesn't crash WSL
     ports:
       - "9200:9200"
     volumes:
       - es_data:/usr/share/elasticsearch/data
-    restart: always
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:7.17.13
+    image: docker.elastic.co/logstash/logstash:7.17.0
     container_name: logstash
     volumes:
-      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./monitoring/logstash.conf:/usr/share/logstash/pipeline/logstash.conf  # <--- UPDATED PATH
     ports:
-      - "5044:5044"
-      - "5000:5000/tcp"
-      - "5000:5000/udp"
-      - "9600:9600"
+      - "5000:5000"
     depends_on:
       - elasticsearch
-    restart: always
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.13
+    image: docker.elastic.co/kibana/kibana:7.17.0
     container_name: kibana
     ports:
       - "5601:5601"
     depends_on:
       - elasticsearch
-    restart: always
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+
+  metricbeat:
+    build: ./monitoring       # <--- UPDATED PATH
+    container_name: metricbeat
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /proc:/hostfs/proc:ro
+      - /:/hostfs:ro
+    command: ["--strict.perms=false", "-e"]
+    depends_on:
+      - elasticsearch
+      - kibana
 
   vault:
     image: hashicorp/vault:latest
