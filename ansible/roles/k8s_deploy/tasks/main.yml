@@ -14,6 +14,11 @@
   args:
     chdir: "{{ playbook_dir }}/.."
 
+- name: Deploy ELK Stack (Elasticsearch, Logstash, Kibana, Metricbeat)
+  ansible.builtin.shell: kubectl apply -f k8s/elk-stack.yaml
+  args:
+    chdir: "{{ playbook_dir }}/.."
+
 - name: Apply Ingress Rules
   ansible.builtin.shell: kubectl apply -f k8s/ingress.yaml
   args:
