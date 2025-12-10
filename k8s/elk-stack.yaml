@@ -221,6 +221,10 @@ spec:
           value: "http://elasticsearch:9200"
         - name: ELASTICSEARCH_URL
           value: "http://elasticsearch:9200"
+        - name: SERVER_BASEPATH
+          value: "/kibana"
+        - name: SERVER_REWRITEBASEPATH
+          value: "true"
         ports:
         - containerPort: 5601
           name: http
