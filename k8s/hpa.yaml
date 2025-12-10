@@ -1,4 +1,4 @@
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: infin8-hpa
@@ -9,4 +9,31 @@ spec:
     name: infin8-app
   minReplicas: 1
   maxReplicas: 5
-  targetCPUUtilizationPercentage: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 20
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 60  # 1 minute (changed from default 5 min)
+      policies:
+      - type: Percent
+        value: 50       # Scale down max 50% of pods at a time
+        periodSeconds: 60
+      - type: Pods
+        value: 2        # Or remove max 2 pods per minute
+        periodSeconds: 60
+      selectPolicy: Min  # Use the slower/safer policy
+    scaleUp:
+      stabilizationWindowSeconds: 0   # Scale up immediately
+      policies:
+      - type: Percent
+        value: 100      # Can double pods quickly
+        periodSeconds: 15
+      - type: Pods
+        value: 4        # Or add 4 pods every 15 seconds
+        periodSeconds: 15
+      selectPolicy: Max  # Use the faster policy

@@ -61,9 +61,11 @@ The application runs on a Kubernetes Cluster (Minikube).
 ### Components:
 *   **Deployment**: `k8s/deployment.yaml`. Defines the `infin8-app` pods.
 *   **Service**: `infin8-app-service` (LoadBalancer). Exposes the app to the outside world.
-*   **Horizontal Pod Autoscaling (HPA)**: `k8s/hpa.yaml`.
-    *   Automatically scales pods from **1 to 5** based on CPU utilization (>50%).
-    *   Ensures High Availability during traffic spikes.
+*   **Horizontal Pod Autoscaling (HPA)**: `k8s/hpa.yaml` (v2).
+    *   Automatically scales pods from **1 to 5** based on CPU utilization (>20%).
+    *   **Scale-Down**: 1-minute stabilization window, removes max 50% of pods or 2 pods per minute.
+    *   **Scale-Up**: Immediate response, can double pods or add 4 pods every 15 seconds.
+    *   Ensures High Availability during traffic spikes and efficient resource utilization during low traffic.
 *   **Live Patching**:
     *   Uses `strategy: RollingUpdate` to update pods one by one.
     *   **Result**: Zero downtime during updates. The old version remains active until the new version is Ready.

@@ -152,5 +152,27 @@ Access Kibana at [http://localhost:5601](http://localhost:5601) to view applicat
         ```
         **NOTE:** This command will likely block your terminal (keep running). **Do not close it.** Copy the URL it outputs and open it in your browser.
 
+5.  **Enable Auto-Scaling (HPA)**:
+    Apply the Horizontal Pod Autoscaler configuration.
+    ```bash
+    kubectl apply -f k8s/hpa.yaml
+    ```
+    *This configures auto-scaling from 1-5 pods based on CPU utilization (>20%).*
+
+6.  **Verify HPA**:
+    Check that the HPA is active and monitoring your deployment.
+    ```bash
+    kubectl get hpa
+    ```
+    Expected output shows CPU percentage and current/desired replica count.
+
+### HPA Configuration (v2)
+The HPA uses the **autoscaling/v2** API for advanced control:
+-   **CPU Threshold**: 20% average utilization
+-   **Scale Range**: 1-5 replicas
+-   **Scale-Down**: 1-minute stabilization window, removes max 50% pods or 2 pods/minute
+-   **Scale-Up**: Immediate response, adds up to 100% more pods or 4 pods/15 seconds
+-   **Benefit**: Faster response to load changes while preventing rapid flapping
+
 ## 5. Development Setup (WSL)
 Refer to `SETUP.md` for detailed instructions on running the project locally in a WSL Ubuntu environment.
