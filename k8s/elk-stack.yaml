@@ -1,0 +1,421 @@
+---
+# Namespace for ELK (optional, using default namespace)
+
+# ConfigMap for Logstash Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+data:
+  logstash.conf: |
+    input {
+      # Django application logs via TCP
+      tcp {
+        port => 5000
+        codec => json_lines
+        type => "django"
+      }
+    }
+
+    filter {
+      # Add timestamp if missing
+      if ![timestamp] {
+        mutate {
+          add_field => { "timestamp" => "%{@timestamp}" }
+        }
+      }
+
+      # Parse Django log levels
+      if [level] {
+        mutate {
+          uppercase => [ "level" ]
+        }
+      }
+
+      # Convert status codes to integers
+      if [status_code] {
+        mutate {
+          convert => { "status_code" => "integer" }
+        }
+      }
+
+      # Add environment context
+      mutate {
+        add_field => {
+          "environment" => "kubernetes"
+          "application" => "infin8"
+        }
+      }
+
+      # Tag error logs for alerting
+      if [level] == "ERROR" or [level] == "CRITICAL" {
+        mutate {
+          add_tag => [ "error", "alert" ]
+        }
+      }
+
+      # Tag canary deployment logs
+      if [type] == "canary" {
+        mutate {
+          add_tag => [ "canary", "deployment" ]
+        }
+      }
+    }
+
+    output {
+      # Elasticsearch output with type-based daily indices
+      elasticsearch {
+        hosts => ["elasticsearch:9200"]
+        index => "infin8-%{[type]}-%{+YYYY.MM.dd}"
+      }
+
+      # Debug output for development
+      stdout {
+        codec => rubydebug
+      }
+    }
+
+---
+# Elasticsearch StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+spec:
+  serviceName: elasticsearch
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: ES_JAVA_OPTS
+          value: "-Xms512m -Xmx512m"
+        - name: xpack.security.enabled
+          value: "false"
+        ports:
+        - containerPort: 9200
+          name: http
+        - containerPort: 9300
+          name: transport
+        volumeMounts:
+        - name: es-data
+          mountPath: /usr/share/elasticsearch/data
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: es-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+
+---
+# Elasticsearch Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+  - port: 9200
+    targetPort: 9200
+    name: http
+  - port: 9300
+    targetPort: 9300
+    name: transport
+  type: ClusterIP
+
+---
+# Logstash Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+    spec:
+      containers:
+      - name: logstash
+        image: docker.elastic.co/logstash/logstash:7.17.0
+        ports:
+        - containerPort: 5000
+          name: tcp-input
+        volumeMounts:
+        - name: logstash-config
+          mountPath: /usr/share/logstash/pipeline/logstash.conf
+          subPath: logstash.conf
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: logstash-config
+        configMap:
+          name: logstash-config
+
+---
+# Logstash Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash
+spec:
+  selector:
+    app: logstash
+  ports:
+  - port: 5000
+    targetPort: 5000
+    name: tcp-input
+  type: ClusterIP
+
+---
+# Kibana Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana:7.17.0
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://elasticsearch:9200"
+        - name: ELASTICSEARCH_URL
+          value: "http://elasticsearch:9200"
+        ports:
+        - containerPort: 5601
+          name: http
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+# Kibana Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+spec:
+  selector:
+    app: kibana
+  ports:
+  - port: 5601
+    targetPort: 5601
+    name: http
+  type: ClusterIP
+
+---
+# Metricbeat ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metricbeat-config
+data:
+  metricbeat.yml: |
+    metricbeat.config.modules:
+      path: ${path.config}/modules.d/*.yml
+      reload.enabled: false
+
+    metricbeat.modules:
+    # Kubernetes metrics
+    - module: kubernetes
+      metricsets:
+        - node
+        - system
+        - pod
+        - container
+        - volume
+      period: 10s
+      host: ${NODE_NAME}
+      hosts: ["https://${NODE_NAME}:10250"]
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      ssl.verification_mode: "none"
+
+    # System metrics
+    - module: system
+      metricsets:
+        - cpu
+        - load
+        - memory
+        - network
+        - process
+        - diskio
+        - filesystem
+      period: 10s
+      enabled: true
+      processes: ['.*']
+
+    output.elasticsearch:
+      hosts: ["elasticsearch:9200"]
+      indices:
+        - index: "metricbeat-k8s-%{+yyyy.MM.dd}"
+          when.contains:
+            event.module: "kubernetes"
+        - index: "metricbeat-system-%{+yyyy.MM.dd}"
+          when.contains:
+            event.module: "system"
+
+    setup.kibana:
+      host: "kibana:5601"
+
+    setup.dashboards.enabled: true
+    setup.ilm.enabled: false
+
+---
+# Metricbeat DaemonSet (runs on every node)
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: metricbeat
+spec:
+  selector:
+    matchLabels:
+      app: metricbeat
+  template:
+    metadata:
+      labels:
+        app: metricbeat
+    spec:
+      serviceAccountName: metricbeat
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: metricbeat
+        image: docker.elastic.co/beats/metricbeat:7.17.0
+        args: [
+          "-c", "/etc/metricbeat.yml",
+          "-e",
+          "--strict.perms=false"
+        ]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        volumeMounts:
+        - name: config
+          mountPath: /etc/metricbeat.yml
+          readOnly: true
+          subPath: metricbeat.yml
+        - name: dockersock
+          mountPath: /var/run/docker.sock
+        - name: proc
+          mountPath: /hostfs/proc
+          readOnly: true
+        - name: cgroup
+          mountPath: /hostfs/sys/fs/cgroup
+          readOnly: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+      volumes:
+      - name: config
+        configMap:
+          name: metricbeat-config
+      - name: dockersock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: cgroup
+        hostPath:
+          path: /sys/fs/cgroup
+
+---
+# ServiceAccount for Metricbeat
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metricbeat
+
+---
+# ClusterRole for Metricbeat
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metricbeat
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - namespaces
+  - events
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources:
+  - deployments
+  - replicasets
+  - statefulsets
+  - daemonsets
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources:
+  - jobs
+  verbs: ["get", "list", "watch"]
+
+---
+# ClusterRoleBinding for Metricbeat
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metricbeat
+subjects:
+- kind: ServiceAccount
+  name: metricbeat
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: metricbeat
+  apiGroup: rbac.authorization.k8s.io

@@ -3,6 +3,7 @@ metricbeat.config.modules:
   reload.enabled: false
 
 metricbeat.modules:
+# Docker container metrics
 - module: docker
   metricsets:
     - "container"
@@ -10,12 +11,42 @@ metricbeat.modules:
     - "memory"
     - "network"
     - "diskio"
+    - "healthcheck"
+    - "info"
+    - "event"
   hosts: ["unix:///var/run/docker.sock"]
   period: 10s
   enabled: true
 
+# System metrics (CPU, memory, disk, network)
+- module: system
+  metricsets:
+    - cpu
+    - load
+    - memory
+    - network
+    - process
+    - diskio
+    - filesystem
+  period: 10s
+  enabled: true
+  processes: ['.*']  # Monitor all processes
+
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]
+  indices:
+    - index: "metricbeat-docker-%{+yyyy.MM.dd}"
+      when.contains:
+        event.module: "docker"
+    - index: "metricbeat-system-%{+yyyy.MM.dd}"
+      when.contains:
+        event.module: "system"
 
 setup.kibana:
   host: "kibana:5601"
+
+# Automatically load Kibana dashboards
+setup.dashboards.enabled: true
+
+# Index lifecycle management (optional)
+setup.ilm.enabled: false
