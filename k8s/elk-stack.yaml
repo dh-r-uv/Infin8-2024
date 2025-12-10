@@ -398,6 +398,10 @@ rules:
   - events
   - pods
   verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources:
+  - nodes/stats
+  verbs: ["get"]
 - apiGroups: ["apps"]
   resources:
   - deployments
