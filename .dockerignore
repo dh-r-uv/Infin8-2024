@@ -1,3 +1,89 @@
+# Environment files
 .env
 env
-db_data
+
+# Python virtual environments
+venv/
+venv
+env/
+ENV/
+.venv
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database data
+db_data/
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Documentation and markdown (not needed in image)
+*.md
+!README.md
+
+# Test files
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node modules (if any)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Kubernetes and deployment configs
+k8s/
+ansible/
+*.sh
+Jenkinsfile
+
+# Docker files (don't need these in the image)
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Other
+vid/
+pods.txt
+kubectl
+
+# Large binaries and executables (inside Infin8/)
+Infin8/minikube-linux-amd64
+Infin8/minikube*
+Infin8/kubectl*
+
+# Django specific (inside Infin8/)
+Infin8/venv/
+Infin8/__pycache__/
+Infin8/**/__pycache__/
+Infin8/**/*.pyc
+Infin8/**/*.pyo
+Infin8/**/*.pyd
+Infin8/staticfiles/
+Infin8/*.log
+Infin8/**/*.log
+Infin8/db.sqlite3
+Infin8/*.db

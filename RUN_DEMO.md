@@ -51,22 +51,25 @@ kubectl get pods
 kubectl get hpa
 ```
 
-## 5. Access the App
-Get the URL of the running application.
+## 5. Access the App via Ingress
 
-### Option A: Port Forwarding (Recommended)
-This is the most reliable method on WSL.
-```bash
-kubectl port-forward svc/infin8-app-service 8081:80
-```
-Then open **[http://localhost:8081](http://localhost:8081)**.
-*(Keep this terminal open)*
+**IMPORTANT**: We use Ingress for all access (not port-forward). This enables the Canary traffic splitting.
 
-### Option B: Minikube Service URL
-If port forwarding fails, try asking Minikube for the URL directly.
-```bash
-minikube service infin8-app-service --url
-```
+1.  **Start Minikube Tunnel** (in a separate terminal, keep it running):
+    ```bash
+    minikube tunnel
+    ```
+    (You may need to enter your password)
+
+2.  **Clean up old LoadBalancer** (if it exists):
+    ```bash
+    kubectl delete svc infin8-app-service
+    ```
+
+3.  **Access the Application**:
+    Open your browser to **[http://localhost](http://localhost)**
+    
+    *(No port number needed - Ingress uses port 80)*
 
 ## 6. Demonstrate Auto-Scaling (HPA)
 Now, let's stress the system to show it scaling up.
@@ -91,21 +94,20 @@ Now, let's stress the system to show it scaling up.
 ## 7. Demonstrate Live Patching (Zero Downtime)
 We will update the app while it's running. Users should see **ZERO errors**.
 
-1.  **Ensure Stable Connection** (Crucial!):
-    *   Make sure `minikube tunnel` is running in a separate terminal.
-    *   Get the LoadBalancer IP: `kubectl get svc infin8-app-service`
-    *   *(Do not use port-forward for this test, it disconnects during updates)*
+1.  **Ensure Minikube Tunnel is Running**:
+    *   The `minikube tunnel` from Step 5 should still be active.
+    *   If not, restart it in a separate terminal.
 
 2.  **Start the Monitor**:
-    In a new terminal, run the verification script against that IP:
+    In a new terminal, run the verification script:
     ```bash
     chmod +x verify_patching.sh
-    ./verify_patching.sh http://<EXTERNAL-IP>:80
+    ./verify_patching.sh http://localhost
     ```
     *You should see "SUCCESS (200 OK)" scrolling.*
 
 3.  **Trigger an Update**:
-    Make a small change to a file (e.g., `views.py`), commit, and push.
+    Make a small change to a file (e.g., change a text in `login_register.html`), commit, and push.
     ```bash
     git commit -am "Patch update"
     git push
