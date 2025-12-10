@@ -122,25 +122,44 @@ We will update the app while it's running. Users should see **ZERO errors**.
 
 **Concept**: Only **20%** of traffic goes to the new "Canary" version (Yellow Banner), managed by **NGINX Ingress**.
 
-1.  **Check Deployments & Ingress**:
-    ```bash
-    kubectl get deployments
-    kubectl get ingress
-    ```
-    (You should see `infin8-stable`, `infin8-canary`, `infin8-ingress`, and `infin8-canary-ingress`).
+### Setup Access via Ingress
 
-2.  **Open in Browser**:
-    *   Find the Ingress IP: `minikube ip` or `kubectl get ingress`.
-    *   Go to `http://<INGRESS_IP>/participant_home`.
-    *   Refresh rapidly. Most times it is **Blue (Stable)**. Occasionally (1 in 5) it is **Yellow (Canary)**.
+**IMPORTANT**: Stop any `kubectl port-forward` commands first. Ingress and port-forward are different access methods - use only one at a time.
 
-3.  **Automated Proof**:
-    Run the verification script against the Ingress IP:
+1.  **Start Minikube Tunnel** (in a separate terminal, keep it running):
     ```bash
-    ./verify_canary.sh http://<INGRESS_IP>
+    minikube tunnel
     ```
-    *   You will see specific statistics (approx 20% Canary).
-    *   *Note: If using WSL, ensure `minikube tunnel` is running.*
+    (This exposes the Ingress on `localhost:80`)
+
+2.  **Remove Old LoadBalancer Service** (if it exists):
+    ```bash
+    kubectl delete svc infin8-app-service
+    ```
+    (This frees port 80 for the Ingress to use)
+
+3.  **Verify Setup**:
+    ```bash
+    kubectl get svc
+    ```
+    You should see:
+    - `infin8-stable` (ClusterIP)
+    - `infin8-canary` (ClusterIP)
+    - NO `infin8-app-service` (old LoadBalancer should be gone)
+
+### Visual Verification
+
+1.  **Open Browser**: `http://localhost/` (NO port number)
+2.  **Refresh 10-15 times** rapidly
+3.  **Expected Result**:
+    - Most times: Normal page (Stable version)
+    - ~20% of times: **Bright Yellow Banner** "⚠️ CANARY VERSION (v1.1) ⚠️" (Canary version)
+
+### Why This Works
+
+- **NGINX Ingress** uses the `canary-weight: "20"` annotation to route exactly 20% of requests to the Canary pods
+- **Minikube Tunnel** exposes the Ingress Controller on your `localhost:80`
+- The old LoadBalancer service would conflict with Ingress on port 80, so it must be removed
 
 ## 9. Stop Everything
 ```bash
