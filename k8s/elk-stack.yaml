@@ -304,8 +304,9 @@ data:
 
     setup.kibana:
       host: "kibana:5601"
+      path: "/kibana"  # Kibana basePath
 
-    setup.dashboards.enabled: true
+    setup.dashboards.enabled: false  # Disabled - run manually if needed
     setup.ilm.enabled: false
 
 ---

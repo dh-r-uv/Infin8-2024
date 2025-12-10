@@ -1,5 +1,16 @@
 # ELK Stack Monitoring - Infin8-2024
 
+## Overview
+ELK stack (Elasticsearch, Logstash, Kibana, Metricbeat) is **automatically deployed** by Jenkins to monitor your Kubernetes cluster. 
+
+**What's monitored:**
+- ✅ **Kubernetes pod metrics** (CPU, memory, network)
+- ✅ **Container metrics** (Docker stats)
+- ✅ **System metrics** (node resources)
+- ❌ **Django application logs** (not configured - uses console logging only)
+
+---
+
 ## Architecture
 
 ```
@@ -7,132 +18,101 @@
 │              Kubernetes Cluster (Minikube)               │
 │                                                          │
 │  ┌──────────────┐                                       │
-│  │ Django Pods  │─────┐                                 │
-│  │ (infin8-app) │     │ Logs (TCP:5000)                 │
-│  └──────────────┘     │                                 │
-│                       ▼                                 │
-│                ┌─────────────┐     ┌──────────────────┐ │
-│                │  Logstash   │────▶│  Elasticsearch   │ │
-│                │  (Service)  │     │  (StatefulSet)   │ │
-│                └─────────────┘     └────────┬─────────┘ │
-│                                              │           │
-│  ┌──────────────┐                           │           │
-│  │ Metricbeat   │──────────────────────────▶│           │
-│  │ (DaemonSet)  │    Pod/Container Metrics  │           │
-│  └──────────────┘                           ▼           │
-│                                       ┌──────────────┐  │
-│                                       │   Kibana     │  │
-│                                       │  (Service)   │  │
-│                                       └──────┬───────┘  │
-└──────────────────────────────────────────────┼──────────┘
-                                               │
-                                         ┌─────▼─────┐
-                                         │  Ingress  │
-                                         └───────────┘
-                                               │
-                                    http://localhost/kibana
+│  │ Django Pods  │     (Console logging only)            │
+│  │ (infin8-app) │                                       │
+│  └──────────────┘                                       │
+│                                                          │
+│  ┌──────────────┐                                       │
+│  │ Metricbeat   │──────────────────────────┐           │
+│  │ (DaemonSet)  │    Pod/Container Metrics │           │
+│  └──────────────┘                          ▼           │
+│                                    ┌──────────────────┐ │
+│                                    │  Elasticsearch   │ │
+│                                    │  (StatefulSet)   │ │
+│                                    └────────┬─────────┘ │
+│                                             │           │
+│                                       ┌─────▼──────┐   │
+│                                       │   Kibana   │   │
+│                                       │ (Service)  │   │
+│                                       └─────┬──────┘   │
+└─────────────────────────────────────────────┼──────────┘
+                                              │
+                                        ┌─────▼─────┐
+                                        │  Ingress  │
+                                        └───────────┘
+                                              │
+                                   http://localhost/kibana
 ```
 
-**ELK Stack is automatically deployed to Kubernetes when you run Jenkins build.**
+**ELK Stack is automatically deployed during Jenkins builds.**
 
 ---
 
-## Accessing Kibana Dashboard
+## Accessing Kibana
 
-After Jenkins successfully deploys your application, access Kibana:
+After any Jenkins build, Kibana is available at:
 
-### Method 1: Via Ingress (Recommended)
-```bash
-# Access Kibana through Ingress
-http://localhost/kibana
-```
+**http://localhost/kibana**
 
-### Method 2: Port Forward
-```bash
-# Forward Kibana port to localhost
-kubectl port-forward svc/kibana 5601:5601
-
-# Then access
-http://localhost:5601
-```
+(Make sure `minikube tunnel` is running)
 
 ---
 
-## Viewing Logs
+## Viewing Metrics - Quick Start
 
-### 1. Create Index Patterns (First Time Only)
+### Step 1: Create Metricbeat Index Pattern
 
-1. Open Kibana: http://localhost/kibana
-2. Go to **Stack Management** → **Index Patterns**
-3. Create pattern: `infin8-*`
-4. Select timestamp field: `@timestamp`
-5. Click **Create index pattern**
+1. Open Kibana: **http://localhost/kibana**
+2. Go to **Stack Management** (gear icon in left sidebar)
+3. Click **Index Patterns** → **Create index pattern**
+4. **Index pattern name:** `metricbeat-*`
+5. **Timestamp field:** `@timestamp`
+6. Click **Create index pattern**
 
-### 2. View Application Logs
+### Step 2: View Metrics in Discover
+
+1. Click **☰** (hamburger menu) in Kibana
+2. Go to **Analytics** → **Discover**
+3. Select `metricbeat-*` from the index pattern dropdown (top left)
+4. You'll see all pod/container metrics!
+
+**Filter by:**
+- `kubernetes.pod.name` - Specific pod metrics
+- `kubernetes.namespace` - Namespace metrics
+- `container.name` - Container-specific data
+
+---
+
+## Viewing Metrics
 
 1. Go to **Discover** tab
-2. Select `infin8-*` index pattern
-3. You'll see all Django application logs!
-
-**Common Filters:**
-```
-level:ERROR              # All errors
-level:WARNING            # Warnings
-type:django              # Application logs
-type:canary              # Canary deployment logs
-```
+2. Select `metricbeat-*` index pattern
+3. Filter by fields like:
+   - `kubernetes.pod.name`
+   - `container.name`
+   - `system.cpu.total.pct`
 
 ---
 
-## Viewing Kubernetes Metrics
+## Useful Queries
 
-### 1. Create Metricbeat Index Pattern
-
-1. Go to **Stack Management** → **Index Patterns**
-2. Create pattern: `metricbeat-*`
-3. Select timestamp field: `@timestamp`
-
-### 2. View Metrics Dashboard
-
-1. Go to **Dashboard** tab
-2. Select **[Metricbeat Docker] Overview** or **[Metricbeat Kubernetes] Overview**
-3. View:
-   - Pod CPU/Memory usage
-   - Container metrics
-   - Network I/O
-   - Disk usage
-
----
-
-## Monitoring Canary Deployments
-
-Track canary deployment events in Kibana:
+Search in **Discover** with these queries:
 
 ```
-# Search for canary logs
-type:canary
+# High CPU pods
+kubernetes.pod.cpu.usage.nanocores:>500000000
 
-# Filter by deployment status
-type:canary AND message:"promoted"
-type:canary AND message:"rollback"
-```
-
----
-
-## Useful Kibana Queries
-
-```
-# Application errors in last 24 hours
-level:ERROR AND @timestamp:[now-24h TO now]
-
-# HTTP 500 errors
-status_code:500
-
-# Pods with high memory
+# High memory usage
 kubernetes.pod.memory.usage.bytes:>500000000
 
-# Container restarts
+# Pod restarts
 kubernetes.container.restarts:>0
+
+# Specific pod metrics
+kubernetes.pod.name:"infin8-app*"
+
+# Container errors
+container.status:"error"
 ```
 
 ---
@@ -140,47 +120,77 @@ kubernetes.container.restarts:>0
 ## Verifying ELK Stack Status
 
 ```bash
-# Check all ELK pods are running
-kubectl get pods -l app=elasticsearch
-kubectl get pods -l app=logstash
-kubectl get pods -l app=kibana
+# Check all ELK pods
+kubectl get pods | grep -E "elasticsearch|kibana|logstash|metricbeat"
 
 # Check Elasticsearch health
-kubectl exec -it elasticsearch-0 -- curl http://localhost:9200/_cluster/health?pretty
+kubectl exec elasticsearch-0 -- curl -s http://localhost:9200/_cluster/health?pretty
 
-# View logs being processed
-kubectl logs deployment/logstash -f
+# View collected indices
+kubectl exec elasticsearch-0 -- curl -s http://localhost:9200/_cat/indices?v
+
+# Check Metricbeat is collecting
+kubectl logs daemonset/metricbeat | head -20
 ```
 
 ---
 
 ## Troubleshooting
 
-### Kibana not accessible
+### Kibana shows 404 or 503
 ```bash
 # Check Kibana pod status
 kubectl get pods -l app=kibana
 
 # Check ingress
-kubectl get ingress
+kubectl get ingress kibana-ingress
 
 # Restart if needed
 kubectl rollout restart deployment/kibana
 ```
 
-### No logs appearing
+### No metrics showing
 ```bash
-# Verify Logstash is receiving logs
-kubectl logs deployment/logstash | grep "input"
+# Verify Metricbeat is running on all nodes
+kubectl get pods -l app=metricbeat
 
-# Check Elasticsearch indices
-kubectl exec -it elasticsearch-0 -- curl http://localhost:9200/_cat/indices?v
+# Check Metricbeat logs
+kubectl logs daemonset/metricbeat
 
-# Send test log
-kubectl run -i --rm logtest --image=busybox --restart=Never -- \
-  sh -c "echo '{\"message\":\"test\",\"type\":\"django\"}' | nc logstash 5000"
+# Verify index exists
+kubectl exec elasticsearch-0 -- curl http://localhost:9200/_cat/indices?v | grep metricbeat
+```
+
+### Dashboards not appearing
+```bash
+# Re-run dashboard setup
+kubectl exec -it daemonset/metricbeat -- metricbeat setup --dashboards
+
+# Wait a minute, then refresh Kibana Dashboard page
 ```
 
 ---
 
-**ELK stack automatically monitors your application after every Jenkins deployment!** 📊
+## What's NOT Included
+
+❌ **Django application logs** - The Django app uses default console logging only. Application logs are visible via:
+```bash
+kubectl logs deployment/infin8-app
+```
+
+To add Django → ELK logging in the future, you would need to:
+1. Install `python-logstash-async` in Dockerfile
+2. Configure Django logging in `settings.py`
+3. Rebuild and redeploy
+
+---
+
+## Summary
+
+✅ **ELK stack automatically deployed** by Jenkins  
+✅ **Metricbeat monitors** Kubernetes cluster  
+✅ **Kibana accessible** at http://localhost/kibana  
+✅ **Pre-built dashboards** for metrics visualization  
+❌ **No Django app logs** in ELK (console only)
+
+**Your Kubernetes cluster is being monitored!** 📊
