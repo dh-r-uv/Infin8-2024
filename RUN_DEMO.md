@@ -11,7 +11,7 @@ Open a WSL terminal and start your local cluster.
 minikube start
 
 # Enable Metrics Server (CRITICAL for HPA autoscaling!)
-minikube addons enable metrics-server
+minikube addons enable metrics-server ingress
 
 # Open tunnel (Required for LoadBalancer External IP) in a SEPARATE terminal
 minikube tunnel
