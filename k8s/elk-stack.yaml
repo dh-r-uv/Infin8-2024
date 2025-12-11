@@ -69,7 +69,128 @@ spec:
     name: transport
   type: ClusterIP
 
-# Logstash Deployment and Service removed - not used
+---
+# Logstash ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+data:
+  logstash.conf: |
+    input {
+      beats {
+        port => 5044
+      }
+      tcp {
+        port => 5000
+        codec => json_lines
+        type => "django"
+      }
+    }
+
+    filter {
+      # Add timestamp if missing
+      if ![timestamp] {
+        mutate {
+          add_field => { "timestamp" => "%{@timestamp}" }
+        }
+      }
+
+      # Parse Django log levels
+      if [level] {
+        mutate {
+          uppercase => [ "level" ]
+        }
+      }
+
+      # Convert status codes to integers
+      if [status_code] {
+        mutate {
+          convert => { "status_code" => "integer" }
+        }
+      }
+
+      # Add environment context
+      mutate {
+        add_field => {
+          "environment" => "production"
+          "application" => "infin8"
+        }
+      }
+
+      # Tag error logs for alerting
+      if [level] == "ERROR" or [level] == "CRITICAL" {
+        mutate {
+          add_tag => [ "error", "alert" ]
+        }
+      }
+    }
+
+    output {
+      elasticsearch {
+        hosts => ["elasticsearch:9200"]
+        index => "infin8-%{+YYYY.MM.dd}"
+      }
+      stdout { codec => rubydebug }
+    }
+
+---
+# Logstash Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+    spec:
+      containers:
+      - name: logstash
+        image: docker.elastic.co/logstash/logstash:7.17.0
+        ports:
+        - containerPort: 5000
+          name: tcp-input
+        - containerPort: 5044
+          name: beats-input
+        volumeMounts:
+        - name: config
+          mountPath: /usr/share/logstash/pipeline/logstash.conf
+          subPath: logstash.conf
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: config
+        configMap:
+          name: logstash-config
+
+---
+# Logstash Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash
+spec:
+  selector:
+    app: logstash
+  ports:
+  - port: 5000
+    targetPort: 5000
+    name: tcp-input
+  - port: 5044
+    targetPort: 5044
+    name: beats-input
+  type: ClusterIP
 
 ---
 # Kibana Deployment

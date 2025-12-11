@@ -9,7 +9,7 @@ from .utils import send_email_token
 from django.http import HttpResponse 
 from django.db.models import Q
 from .models import IncomingRequest, OutgoingRequest, Status
-
+from django.http import HttpResponseServerError
 from datetime import datetime, timedelta
 import pytz
 
@@ -199,6 +199,7 @@ def registerPage(request):
 
 
 def participant_home(request):
+    # return HttpResponseServerError("Intentional canary error")
     d={}
     attendance = Attendance.objects.all().values()
     for x in attendance:
