@@ -163,7 +163,26 @@ We will update the app while it's running. Users should see **ZERO errors**.
 - **Minikube Tunnel** exposes the Ingress Controller on your `localhost:80`
 - The old LoadBalancer service would conflict with Ingress on port 80, so it must be removed
 
-## 9. Stop Everything
+## 9. Verify ELK Stack & Logging
+Verify that your application logs are flowing to Logstash and into Elasticsearch.
+
+1.  **Generate Traffic**:
+    Access the app a few times: `http://localhost/`
+
+2.  **Access Kibana**:
+    Open: `http://localhost/kibana`
+
+3.  **Create Index Pattern**:
+    *   Go to **Stack Management** > **Index Patterns**.
+    *   Create pattern: `infin8-*`.
+    *   Select `@timestamp`.
+
+4.  **View Logs**:
+    *   Go to **Discover**.
+    *   Search for: `marketing` (or any text on your landing page).
+    *   You should see logs with `type: "django"` and tags `["infin8", "logstash"]`.
+
+## 10. Stop Everything
 ```bash
 minikube stop
 # Ctrl+C to stop minikube tunnel
