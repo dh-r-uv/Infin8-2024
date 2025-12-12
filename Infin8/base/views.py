@@ -199,7 +199,6 @@ def registerPage(request):
 
 
 def participant_home(request):
-    # return HttpResponseServerError("Intentional canary error")
     d={}
     attendance = Attendance.objects.all().values()
     for x in attendance:
