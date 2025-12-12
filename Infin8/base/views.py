@@ -6,26 +6,22 @@ import json
 from datetime import datetime
 import socket
 
-# Configure structured logging to Logstash
+# Get logger - handlers configured in settings.py (console + logstash)
 logger = logging.getLogger('infin8.user_actions')
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
 
 def log_user_action(action, user, **extra_data):
-    """Helper function to log user actions in structured JSON format"""
-    log_data = {
-        'action': action,
-        'user': str(user),
-        'timestamp': datetime.now().isoformat(),
-        'host': socket.gethostname(),
-        'tags': ['user_action', 'infin8'],
-        **extra_data
-    }
-    logger.info(json.dumps(log_data))
+    """Helper function to log user actions in structured format to Logstash"""
+    logger.info(
+        f"User action: {action}",
+        extra={
+            'action': action,
+            'user': str(user),
+            'timestamp': datetime.now().isoformat(),
+            'host': socket.gethostname(),
+            'tags': ['user_action', 'infin8'],
+            **extra_data
+        }
+    )
 from .forms import MyUserCreationForm
 from django.contrib import messages
 from .models import User,Code,Attendance
