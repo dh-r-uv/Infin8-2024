@@ -7,7 +7,11 @@ pipeline {
         DOCKER_IMAGE = "${DOCKER_REGISTRY_USER}/infin8"
         DOCKER_TAG = "latest"
         // Credentials ID as provided by the user
-        DOCKER_CREDS_ID = 'docker-credentials' 
+        DOCKER_CREDS_ID = 'docker-credentials'
+
+        // Explicitly set KUBECONFIG to point to the working user's config
+        // This ensures Jenkins (running as 'jenkins' user) can find the cluster credentials
+        KUBECONFIG = "/home/dhruv/.kube/config-jenkins"
     }
 
     stages {
