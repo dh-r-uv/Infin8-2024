@@ -1,6 +1,31 @@
 from django.shortcuts import render, get_object_or_404,redirect
 import os # Force Rebuild 2
 from django.contrib.auth import authenticate, login, logout
+import logging
+import json
+from datetime import datetime
+import socket
+
+# Configure structured logging to Logstash
+logger = logging.getLogger('infin8.user_actions')
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
+def log_user_action(action, user, **extra_data):
+    """Helper function to log user actions in structured JSON format"""
+    log_data = {
+        'action': action,
+        'user': str(user),
+        'timestamp': datetime.now().isoformat(),
+        'host': socket.gethostname(),
+        'tags': ['user_action', 'infin8'],
+        **extra_data
+    }
+    logger.info(json.dumps(log_data))
 from .forms import MyUserCreationForm
 from django.contrib import messages
 from .models import User,Code,Attendance
@@ -161,6 +186,7 @@ def loginPage(request):
 
         if user is not None:
             login(request, user)
+            log_user_action('user_login', user, email=email, success=True)
             return redirect('participant_home')
         else:
             messages.error(request, 'Username or Password does not exist')
@@ -228,6 +254,10 @@ def participant_home(request):
                             user_1.points +=d[a]
                             user_1.worst_case_points +=d[a]
                             user_1.save()
+                            log_user_action('attendance_submitted', user_1, 
+                                          code=a, 
+                                          points_earned=d[a],
+                                          total_points=user_1.points)
                             messages.success(request,'Attendance code accepted')
                         else:
                             messages.error(request,'Attendance code is not valid')
@@ -324,6 +354,10 @@ def playGame(request):
                     receiver.worst_case_points-=int(points)
                     sender.save()
                     receiver.save()
+                    log_user_action('game_request_sent', sender,
+                                  receiver=receiver.username,
+                                  points=points,
+                                  game_link=game_link)
                     messages.success(request,'Game request sent')
             else:
                 if(sender.points<points):
@@ -382,6 +416,10 @@ def confirmGame(request, game_link):  #receiver plays the game
             out_req.valid_until = datetime.now(pytz.timezone(TIME_ZONE)) + timedelta(minutes=Game_time)
             out_req.save()
             in_req.save()
+            log_user_action('game_accepted', user,
+                          sender=out_req.sender.username,
+                          points=in_req.points,
+                          game_link=game_link)
             return redirect('Game', game_link=game_link)
         elif request.method == 'POST'  and request.POST['confirm']=='decline':
             
@@ -472,13 +510,27 @@ def Game(request, game_link):
                 messages.success(request,'Oh no! you guessed wrong one too many times, you lost the game')
                 sender.points+=points
                 sender.worst_case_points+=2*points
-                receiver.points-=points     
+                receiver.points-=points
+                log_user_action('game_completed', receiver,
+                              opponent=sender.username,
+                              result='lost',
+                              points=points,
+                              sender_wins=out_req.wins,
+                              receiver_wins=3-out_req.wins,
+                              game_link=game_link)
                 #out_req.game_status = 'You won'
             else:
                 messages.success(request,'Your gambling addiction has finally paid off! you won the game')
                 sender.points-=points
                 receiver.points+=points
                 receiver.worst_case_points+=2*points
+                log_user_action('game_completed', receiver,
+                              opponent=sender.username,
+                              result='won',
+                              points=points,
+                              sender_wins=out_req.wins,
+                              receiver_wins=3-out_req.wins,
+                              game_link=game_link)
                 #out_req.game_status = 'You lost'
             
             # out_req.save()

@@ -216,5 +216,10 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'infin8.user_actions': {
+            'handlers': ['console', 'logstash'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
 }
