@@ -1,0 +1,56 @@
+---
+- name: Check if stable deployment exists
+  ansible.builtin.shell: kubectl get deployment infin8-app
+  register: stable_exists
+  ignore_errors: true
+  changed_when: false
+
+- name: First Deployment - Apply all manifests to stable
+  block:
+    - name: Apply deployment manifests
+      ansible.builtin.shell: kubectl apply -f k8s/deployment.yaml
+      args:
+        chdir: "{{ playbook_dir }}/.."
+    
+    - name: Apply HPA
+      ansible.builtin.shell: kubectl apply -f k8s/hpa.yaml
+      args:
+        chdir: "{{ playbook_dir }}/.."
+    
+    - name: Apply Ingress
+      ansible.builtin.shell: kubectl apply -f k8s/ingress.yaml
+      args:
+        chdir: "{{ playbook_dir }}/.."
+    
+    - name: Set stable image to new version
+      ansible.builtin.shell: "kubectl set image deployment/infin8-app infin8-app={{ new_image }}"
+      
+    - name: Wait for stable rollout
+      ansible.builtin.shell: kubectl rollout status deployment/infin8-app --timeout=300s
+      
+  when: stable_exists.rc != 0
+
+- name: Subsequent Deployment - Canary workflow
+  block:
+    - name: Apply canary deployment manifest
+      ansible.builtin.shell: kubectl apply -f k8s/canary.yaml
+      args:
+        chdir: "{{ playbook_dir }}/.."
+    
+    - name: Update canary image
+      ansible.builtin.shell: "kubectl set image deployment/infin8-canary infin8-app={{ new_image }}"
+    
+    - name: Wait for canary to be ready
+      ansible.builtin.shell: kubectl rollout status deployment/infin8-canary --timeout=300s
+    
+    - name: Run automated canary validation
+      ansible.builtin.shell: "./auto_canary.sh {{ new_image }} {{ stable_image }}"
+      args:
+        chdir: "{{ playbook_dir }}/.."
+      register: canary_result
+      
+    - name: Report canary result
+      debug:
+        msg: "{{ canary_result.stdout }}"
+        
+  when: stable_exists.rc == 0

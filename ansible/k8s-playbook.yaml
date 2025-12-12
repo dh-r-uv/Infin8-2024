@@ -1,8 +1,11 @@
 ---
-- name: Deploy Infin8 to Kubernetes (Minikube)
+- name: Intelligent Canary Deployment to Kubernetes
   hosts: localhost
   connection: local
   gather_facts: false
+  vars:
+    new_image: "{{ lookup('env', 'NEW_IMAGE') }}"
+    stable_image: "{{ lookup('env', 'STABLE_IMAGE') | default('dhruvk321/infin8:latest', true) }}"
   tasks:
     - name: Update kubeconfig context
       command: minikube update-context
@@ -15,4 +18,4 @@
       retries: 5
       delay: 2
   roles:
-    - k8s_deploy
+    - canary_deploy

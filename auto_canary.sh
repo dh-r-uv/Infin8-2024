@@ -174,3 +174,10 @@ echo ""
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}✅ Automated Deployment Complete${NC}"
 echo -e "${BLUE}========================================${NC}"
+
+# Exit with appropriate code for CI/CD integration
+if [ "$DECISION" = "PROMOTE" ]; then
+    exit 0  # Success
+else
+    exit 1  # Rollback means deployment failed
+fi
