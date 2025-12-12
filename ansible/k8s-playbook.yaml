@@ -1,19 +1,18 @@
 ---
-# In ansible/k8s-playbook.yaml, add this BEFORE your kubectl commands:
-
-- name: Update kubeconfig context
-  command: minikube update-context
-  ignore_errors: yes
-
-- name: Wait for API server to be ready
-  command: kubectl get nodes
-  register: nodes_result
-  until: nodes_result.rc == 0
-  retries: 5
-  delay: 2
 - name: Deploy Infin8 to Kubernetes (Minikube)
   hosts: localhost
   connection: local
   gather_facts: false
+  tasks:
+    - name: Update kubeconfig context
+      command: minikube update-context
+      ignore_errors: yes
+
+    - name: Wait for API server to be ready
+      command: kubectl get nodes
+      register: nodes_result
+      until: nodes_result.rc == 0
+      retries: 5
+      delay: 2
   roles:
     - k8s_deploy
